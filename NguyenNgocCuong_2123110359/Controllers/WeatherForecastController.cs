@@ -17,7 +17,7 @@ namespace NguyenNgocCuong_2123110359.Controllers
         {
             _logger = logger;
         }
-
+        //addftyyv
         [HttpGet(Name = "GetWeatherForecast")]
         public IEnumerable<WeatherForecast> Get()
         {
