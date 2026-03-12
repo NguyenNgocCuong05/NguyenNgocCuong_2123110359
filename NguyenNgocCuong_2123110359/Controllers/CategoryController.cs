@@ -1,43 +1,91 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+using NguyenNgocCuong_2123110359.Models;
 
 namespace NguyenNgocCuong_2123110359.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CategoryController : ControllerBase
+    public class CategoryController : ControllerBase            
     {
-        // GET: api/<CategoryController>
+        private static readonly List<string> _categories = new List<string>
+        {
+            "value1",
+            "value2"
+        };
+
+        private static readonly object _lock = new();
+
+        // GET: api/Category
         [HttpGet]
-        public IEnumerable<string> Get()
+        public ActionResult<IEnumerable<string>> Get()
         {
-            return new string[] { "value1", "value2" };
+            lock (_lock)
+            {
+                return Ok(_categories);
+            }
         }
 
-        // GET api/<CategoryController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
+        // GET: api/Category/0
+        [HttpGet("{id:int}", Name = "GetCategoryById")]
+        public ActionResult<string> GetById(int id)
         {
-            return "value";
+            lock (_lock)
+            {
+                if (id < 0 || id >= _categories.Count)
+                    return NotFound();
+
+                return Ok(_categories[id]);
+            }
         }
 
-        // POST api/<CategoryController>
+        // POST: api/Category
         [HttpPost]
-        public void Post([FromBody] string value)
+        public ActionResult Create([FromBody] NameDto dto)
         {
+            if (dto is null || string.IsNullOrWhiteSpace(dto.Name))
+                return BadRequest("Category name required.");
+
+            int newIndex;
+            lock (_lock)
+            {
+                _categories.Add(dto.Name);
+                newIndex = _categories.Count - 1;
+            }
+
+            return CreatedAtRoute("GetCategoryById", new { id = newIndex }, new { id = newIndex, name = dto.Name });
         }
 
-        // PUT api/<CategoryController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        // PUT: api/Category/0
+        [HttpPut("{id:int}")]
+        public ActionResult Update(int id, [FromBody] NameDto dto)
         {
+            if (dto is null || string.IsNullOrWhiteSpace(dto.Name))
+                return BadRequest("Category name required.");
+
+            lock (_lock)
+            {
+                if (id < 0 || id >= _categories.Count)
+                    return NotFound();
+
+                _categories[id] = dto.Name;
+            }
+
+            return NoContent();
         }
 
-        // DELETE api/<CategoryController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
+        // DELETE: api/Category/0
+        [HttpDelete("{id:int}")]
+        public ActionResult Delete(int id)
         {
+            lock (_lock)
+            {
+                if (id < 0 || id >= _categories.Count)
+                    return NotFound();
+
+                _categories.RemoveAt(id);
+            }
+
+            return NoContent();
         }
     }
 }
